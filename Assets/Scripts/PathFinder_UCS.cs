@@ -190,7 +190,7 @@ public static class PathFinder_Ucs
 
         path = new List<Vector3Int>();
         numberOfCells = cameFrom;
-        return PathProcessor.TryGetPath(cameFrom, startCoordinate, goalCoordinate, ref path);
+        return true;//PathProcessor.TryGetPath(cameFrom, startCoordinate, goalCoordinate, ref path); 
 
     }
 

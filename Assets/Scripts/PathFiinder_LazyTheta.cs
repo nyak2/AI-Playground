@@ -8,15 +8,17 @@ public static class PathFinder_LazyTheta
     public enum Heuristics
     {
         NONE = 0,
-        MANHATTAN = 1,
+        EUCLIDEAN = 1,
         OCTILE = 2
     }
 
     private static readonly Dictionary<Heuristics, Func<Vector3Int, Vector3Int, float>> HEURISTICS = new();
 
-    private static float Manhattan(Vector3Int a, Vector3Int b)
+    private static float Euclidean(Vector3Int a, Vector3Int b)
     {
-        return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+        float dx = b.x - a.x;
+        float dy = b.y - a.y;
+        return MathF.Sqrt(dx * dx + dy * dy);
     }
 
     private static float OCTILE(Vector3Int a, Vector3Int b)
@@ -30,11 +32,11 @@ public static class PathFinder_LazyTheta
     static PathFinder_LazyTheta()
     {
         HEURISTICS.Add(Heuristics.NONE, (a, b) => 0);
-        HEURISTICS.Add(Heuristics.MANHATTAN, Manhattan);
+        HEURISTICS.Add(Heuristics.EUCLIDEAN, Euclidean);
         HEURISTICS.Add(Heuristics.OCTILE, OCTILE);
     }
 
-    public static bool TryFindPath(Vector3Int startCoordinate, Vector3Int goalCoordinate, ISquareGrid grid, out List<Vector3Int> path, Heuristics heuristicType, out Dictionary<Vector3Int, Vector3Int?> numberOfCells, out Stopwatch time, bool noDiagonal, PathFinderTest.NaviType nav)
+    public static bool TryFindPath(Vector3Int startCoordinate, Vector3Int goalCoordinate, ISquareGrid grid, out List<Vector3Int> path, Heuristics heuristicType, out Dictionary<Vector3Int, Vector3Int?> numberOfCells, out Stopwatch time, out Stopwatch timePathLength, bool noDiagonal, PathFinderTest.NaviType nav)
     {
         PriorityQueue<Vector3Int> frontier = new PriorityQueue<Vector3Int>();
         Dictionary<Vector3Int, Vector3Int?> cameFrom = new Dictionary<Vector3Int, Vector3Int?>();
@@ -63,121 +65,121 @@ public static class PathFinder_LazyTheta
 
             foreach (CellData neighbour in connections)
             {
-                int overrideCost = 0;
+                //int overrideCost = 0;
                 if (neighbour.Cost < 0 || (!noDiagonal && Mathf.Abs(neighbour.Coordinate.x - coordinate.x) > 0 && Mathf.Abs(neighbour.Coordinate.y - coordinate.y) > 0))
                 {
                     continue;
                 }
 
-                switch (nav)
-                {
-                    case PathFinderTest.NaviType.Elf:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Golem:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Mountain)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean || neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                overrideCost = (int)nav + 1;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.SandGoblin:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
+                //switch (nav)
+                //{
+                //    case PathFinderTest.NaviType.Elf:
+                //        {
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                //            {
+                //                continue;
+                //            }
+                //        }
+                //        break;
+                //    case PathFinderTest.NaviType.Golem:
+                //        {
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Mountain)
+                //            {
+                //                overrideCost = -(int)nav;
+                //            }
+                //            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean || neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                //            {
+                //                overrideCost = (int)nav + 1;
+                //            }
+                //        }
+                //        break;
+                //    case PathFinderTest.NaviType.SandGoblin:
+                //        {
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                //            {
+                //                continue;
+                //            }
 
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Desert || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Viking:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                continue;
-                            }
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Desert || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                //            {
+                //                overrideCost = -(int)nav;
+                //            }
+                //        }
+                //        break;
+                //    case PathFinderTest.NaviType.Viking:
+                //        {
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                //            {
+                //                continue;
+                //            }
 
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Desert || neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
-                            {
-                                overrideCost = (int)nav + 1;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Ogre:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
+                //            {
+                //                overrideCost = -(int)nav;
+                //            }
+                //            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Desert || neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
+                //            {
+                //                overrideCost = (int)nav + 1;
+                //            }
+                //        }
+                //        break;
+                //    case PathFinderTest.NaviType.Ogre:
+                //        {
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                //            {
+                //                continue;
+                //            }
 
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains || neighbour.Cost == (int)TerrainPicker.typesTerrain.Mountain)
-                            {
-                                overrideCost = (int)nav + 1;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.LadyOfTheLake:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
+                //            {
+                //                overrideCost = -(int)nav;
+                //            }
+                //            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains || neighbour.Cost == (int)TerrainPicker.typesTerrain.Mountain)
+                //            {
+                //                overrideCost = (int)nav + 1;
+                //            }
+                //        }
+                //        break;
+                //    case PathFinderTest.NaviType.LadyOfTheLake:
+                //        {
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                //            {
+                //                continue;
+                //            }
 
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
-                            {
-                                overrideCost = -(int)nav + 1;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
-                            {
-                                overrideCost = (int)nav;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Demon:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                continue;
-                            }
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                //            {
+                //                overrideCost = -(int)nav;
+                //            }
+                //            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
+                //            {
+                //                overrideCost = -(int)nav + 1;
+                //            }
+                //            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
+                //            {
+                //                overrideCost = (int)nav;
+                //            }
+                //        }
+                //        break;
+                //    case PathFinderTest.NaviType.Demon:
+                //        {
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                //            {
+                //                continue;
+                //            }
 
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else
-                            {
-                                overrideCost = 3;
-                            }
+                //            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                //            {
+                //                overrideCost = -(int)nav;
+                //            }
+                //            else
+                //            {
+                //                overrideCost = 3;
+                //            }
 
-                        }
-                        break;
-                }
+                //        }
+                //        break;
+                //}
 
 
                 //LAZY THETA* LOS SIGHT CHECK
@@ -187,7 +189,7 @@ public static class PathFinder_LazyTheta
                     float newCost = costSoFar[parentCoord.Value] +
                         (HEURISTICS[heuristicType](parentCoord.Value, neighbour.Coordinate) -
                          HEURISTICS[heuristicType](parentCoord.Value, coordinate)) +
-                        neighbour.Cost + overrideCost;
+                        neighbour.Cost /*+ overrideCost*/;
 
                     if (!costSoFar.ContainsKey(neighbour.Coordinate) || newCost < costSoFar[neighbour.Coordinate])
                     {
@@ -200,7 +202,7 @@ public static class PathFinder_LazyTheta
                 }
 
 
-                float calcCost = costSoFar[coordinate] + neighbour.Cost + overrideCost;
+                float calcCost = costSoFar[coordinate] + neighbour.Cost /*+ overrideCost*/;
 
                 if (Mathf.Abs(neighbour.Coordinate.x - coordinate.x) > 0 && Mathf.Abs(neighbour.Coordinate.y - coordinate.y) > 0)
                 {
@@ -224,14 +226,14 @@ public static class PathFinder_LazyTheta
 
                 if (!costSoFar.ContainsKey(neighbour.Coordinate) || calcCost < costSoFar[neighbour.Coordinate])
                 {
-                    for (int i = 0; i < connections.Count - 4; i++)
-                    {
-                        if (connections[i].Cost < neighbour.Cost)
-                        {
-                            calcCost = DiagonalCheck(coordinate, neighbour.Coordinate, calcCost);
-                            break;
-                        }
-                    }
+                    //for (int i = 0; i < connections.Count - 4; i++)
+                    //{
+                    //    if (connections[i].Cost < neighbour.Cost)
+                    //    {
+                    //        calcCost = DiagonalCheck(coordinate, neighbour.Coordinate, calcCost);
+                    //        break;
+                    //    }
+                    //}
                     costSoFar[neighbour.Coordinate] = calcCost;
                     cameFrom[neighbour.Coordinate] = coordinate;
                     float priority = calcCost + (HEURISTICS[heuristicType](neighbour.Coordinate, goalCoordinate));
@@ -247,7 +249,12 @@ public static class PathFinder_LazyTheta
 
         path = new List<Vector3Int>();
         numberOfCells = cameFrom;
-        return PathProcessor.TryGetPath(cameFrom, startCoordinate, goalCoordinate, ref path);
+
+        bool PathFound = PathProcessor.TryGetPath(cameFrom, startCoordinate, goalCoordinate, ref path, out Stopwatch pathLengthTimer);
+
+        timePathLength = pathLengthTimer;
+
+        return PathFound;
     }
 
     private static float DiagonalCheck(Vector3Int currentCoordinate, Vector3Int endCoordinate, float prev_Cost)

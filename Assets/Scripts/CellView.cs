@@ -50,8 +50,8 @@ public class CellView : MonoBehaviour
                 }
             case 1:
                 {
-                    int i = Random.Range(0, forestSprite.Count);
-                    tileSpriteRenderer.sprite = forestSprite[i]; // grasslands
+                    //int i = Random.Range(0, forestSprite.Count);
+                    tileSpriteRenderer.sprite = null; // grasslands
                     break;
                 }
             case 2:

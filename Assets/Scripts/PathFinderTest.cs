@@ -25,6 +25,8 @@ public class PathFinderTest : MonoBehaviour
     [SerializeField] private TextMeshProUGUI HeuristicText;
     [SerializeField] private TextMeshProUGUI DiagonalText;
     [SerializeField] private TextMeshProUGUI PathStatusText;
+    [SerializeField] private TextMeshProUGUI timeForPathShapeText;
+    [SerializeField] private TextMeshProUGUI PathLengthText;
 
     [Header("Navigator type")]
     [SerializeField] private TextMeshProUGUI navitext;
@@ -81,11 +83,11 @@ public class PathFinderTest : MonoBehaviour
         {
             if (seek.lr.positionCount > 1)
             {
-                navigatorSelection.SetActive(false);
+                //navigatorSelection.SetActive(false);
             }
             else
             {
-                navigatorSelection.SetActive(true);
+               // navigatorSelection.SetActive(true);
             }
 
             PathFindingText.text = type.ToString();
@@ -158,7 +160,7 @@ public class PathFinderTest : MonoBehaviour
 
             case AiTypes.AStar:
                 {
-                    if (PathFinder_AStar.TryFindPath(startCoordinate, goalCoordinate, gridController.GetSquareGrid(), out var pf, HeuristicsType , out var NumOfCells, out Stopwatch time, enableDiagonal, navigators))
+                    if (PathFinder_AStar.TryFindPath(startCoordinate, goalCoordinate, gridController.GetSquareGrid(), out var pf, HeuristicsType , out var NumOfCells, out Stopwatch time, out Stopwatch timePathLength, enableDiagonal, navigators))
                     {
                         pathRenderer.enabled = true;
                         pathRenderer.RenderPath(pf);
@@ -167,6 +169,9 @@ public class PathFinderTest : MonoBehaviour
                         timeText.text = convertToMs(time).ToString() + " ms";
                         PathStatusText.color = Color.green;
                         PathStatusText.text = "Valid";
+
+                        PathLengthText.text = pf.Count.ToString();
+                        timeForPathShapeText.text = convertToMs(timePathLength).ToString() + " ms";
                     }
                     else
                     {
@@ -177,13 +182,16 @@ public class PathFinderTest : MonoBehaviour
 
                         PathStatusText.color = Color.red;
                         PathStatusText.text = "Invalid";
+
+                        PathLengthText.text = "0";
+
                     }
                 }
                 break;
 
             case AiTypes.LazyTheta:
                 {
-                    if (PathFinder_LazyTheta.TryFindPath(startCoordinate, goalCoordinate, gridController.GetSquareGrid(), out var pf, HeuristicsTypeLazy, out var NumOfCells, out Stopwatch time, enableDiagonal, navigators))
+                    if (PathFinder_LazyTheta.TryFindPath(startCoordinate, goalCoordinate, gridController.GetSquareGrid(), out var pf, HeuristicsTypeLazy, out var NumOfCells, out Stopwatch time, out Stopwatch timePathLength, enableDiagonal, navigators))
                     {
                         pathRenderer.enabled = true;
                         pathRenderer.RenderPath(pf);
@@ -192,6 +200,10 @@ public class PathFinderTest : MonoBehaviour
                         timeText.text = convertToMs(time).ToString() + " ms";
                         PathStatusText.color = Color.green;
                         PathStatusText.text = "Valid";
+
+                        PathLengthText.text = pf.Count.ToString();
+                        timeForPathShapeText.text = convertToMs(timePathLength).ToString() + " ms";
+
                     }
                     else
                     {
@@ -202,6 +214,8 @@ public class PathFinderTest : MonoBehaviour
 
                         PathStatusText.color = Color.red;
                         PathStatusText.text = "Invalid";
+
+                        PathLengthText.text = "0";
                     }
                 }
                 break;
@@ -289,9 +303,9 @@ public class PathFinderTest : MonoBehaviour
         AStarSettings.SetActive(true);
         switch (HeuristicsType)
         {
-            case PathFinder_AStar.Heuristics.MANHATTAN:
+            case PathFinder_AStar.Heuristics.EUCLIDEAN:
                 {
-                    HeuristicText.text = "Manhattan";
+                    HeuristicText.text = "Euclidean";
                     break;
                 }
             case PathFinder_AStar.Heuristics.OCTILE:
@@ -310,9 +324,9 @@ public class PathFinderTest : MonoBehaviour
         AStarSettings.SetActive(true);
         switch (HeuristicsType)
         {
-            case PathFinder_AStar.Heuristics.MANHATTAN:
+            case PathFinder_AStar.Heuristics.EUCLIDEAN:
                 {
-                    HeuristicText.text = "Manhattan";
+                    HeuristicText.text = "Euclidean";
                     break;
                 }
             case PathFinder_AStar.Heuristics.OCTILE:
@@ -328,7 +342,7 @@ public class PathFinderTest : MonoBehaviour
     {
         switch(HeuristicsType)
         {
-            case PathFinder_AStar.Heuristics.MANHATTAN:
+            case PathFinder_AStar.Heuristics.EUCLIDEAN:
                 {
                     HeuristicsType = PathFinder_AStar.Heuristics.OCTILE;
                     HeuristicText.text = "Octile";
@@ -336,8 +350,8 @@ public class PathFinderTest : MonoBehaviour
                 }
             case PathFinder_AStar.Heuristics.OCTILE:
                 {
-                    HeuristicsType = PathFinder_AStar.Heuristics.MANHATTAN;
-                    HeuristicText.text = "Manhattan";
+                    HeuristicsType = PathFinder_AStar.Heuristics.EUCLIDEAN;
+                    HeuristicText.text = "Euclidean";
                     break;
                 }
         }
