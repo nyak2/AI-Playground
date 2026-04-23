@@ -289,9 +289,9 @@ public class PathFinderTest : MonoBehaviour
         AStarSettings.SetActive(true);
         switch (HeuristicsType)
         {
-            case PathFinder_AStar.Heuristics.MANHATTAN:
+            case PathFinder_AStar.Heuristics.EUCLIDEAN:
                 {
-                    HeuristicText.text = "Manhattan";
+                    HeuristicText.text = "Euclidean";
                     break;
                 }
             case PathFinder_AStar.Heuristics.OCTILE:
@@ -310,9 +310,9 @@ public class PathFinderTest : MonoBehaviour
         AStarSettings.SetActive(true);
         switch (HeuristicsType)
         {
-            case PathFinder_AStar.Heuristics.MANHATTAN:
+            case PathFinder_AStar.Heuristics.EUCLIDEAN:
                 {
-                    HeuristicText.text = "Manhattan";
+                    HeuristicText.text = "Euclidean";
                     break;
                 }
             case PathFinder_AStar.Heuristics.OCTILE:
@@ -328,7 +328,7 @@ public class PathFinderTest : MonoBehaviour
     {
         switch(HeuristicsType)
         {
-            case PathFinder_AStar.Heuristics.MANHATTAN:
+            case PathFinder_AStar.Heuristics.EUCLIDEAN:
                 {
                     HeuristicsType = PathFinder_AStar.Heuristics.OCTILE;
                     HeuristicText.text = "Octile";
@@ -336,8 +336,8 @@ public class PathFinderTest : MonoBehaviour
                 }
             case PathFinder_AStar.Heuristics.OCTILE:
                 {
-                    HeuristicsType = PathFinder_AStar.Heuristics.MANHATTAN;
-                    HeuristicText.text = "Manhattan";
+                    HeuristicsType = PathFinder_AStar.Heuristics.EUCLIDEAN;
+                    HeuristicText.text = "Euclidean";
                     break;
                 }
         }

@@ -7,15 +7,17 @@ public static class PathFinder_AStar
     public enum Heuristics
     {
         NONE = 0,
-        MANHATTAN = 1,
+        EUCLIDEAN = 1,
         OCTILE = 2
     }
 
     private static readonly Dictionary<Heuristics, Func<Vector3Int, Vector3Int, float>> HEURISTICS = new();
 
-    private static float Manhattan(Vector3Int a, Vector3Int b)
+    private static float EUCLIDEAN(Vector3Int a, Vector3Int b)
     {
-        return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+        float dx = b.x - a.x;
+        float dy = b.y - a.y;
+        return MathF.Sqrt(dx * dx + dy * dy);
     }
 
     private static float OCTILE(Vector3Int a, Vector3Int b)
@@ -29,7 +31,7 @@ public static class PathFinder_AStar
     static PathFinder_AStar()
     {
         HEURISTICS.Add(Heuristics.NONE, (a, b) => 0);
-        HEURISTICS.Add(Heuristics.MANHATTAN, Manhattan);
+        HEURISTICS.Add(Heuristics.EUCLIDEAN, EUCLIDEAN);
         HEURISTICS.Add(Heuristics.OCTILE, OCTILE);
     }
 
@@ -59,121 +61,18 @@ public static class PathFinder_AStar
 
             foreach (CellData neighbour in connections)
             {
-                int overrideCost = 0;
-                if (neighbour.Cost < 0 || (!noDiagonal && Mathf.Abs(neighbour.Coordinate.x - coordinate.x) > 0 && Mathf.Abs(neighbour.Coordinate.y - coordinate.y) > 0))
+                // Diagonal restriction
+                if (neighbour.Cost < 0 ||
+                    (!noDiagonal &&
+                     Mathf.Abs(neighbour.Coordinate.x - coordinate.x) > 0 &&
+                     Mathf.Abs(neighbour.Coordinate.y - coordinate.y) > 0))
                 {
                     continue;
                 }
 
-                switch (nav)
-                {
-                    case PathFinderTest.NaviType.Elf:
-                        {
-                            if(neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Golem:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Mountain)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean || neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                overrideCost = (int)nav + 1;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.SandGoblin:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
-
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Desert || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Viking:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava || neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                continue;
-                            }
-
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Desert || neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
-                            {
-                                overrideCost = (int)nav + 1;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Ogre:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
-
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains || neighbour.Cost == (int)TerrainPicker.typesTerrain.Mountain)
-                            {
-                                overrideCost = (int)nav + 1;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.LadyOfTheLake:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                continue;
-                            }
-
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Swamp)
-                            {
-                                overrideCost = -(int)nav + 1;
-                            }
-                            else if(neighbour.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
-                            {
-                                overrideCost = (int)nav;
-                            }
-                        }
-                        break;
-                    case PathFinderTest.NaviType.Demon:
-                        {
-                            if (neighbour.Cost == (int)TerrainPicker.typesTerrain.Ocean)
-                            {
-                                continue;
-                            }
-
-                            if(neighbour.Cost == (int)TerrainPicker.typesTerrain.Lava)
-                            {
-                                overrideCost = -(int)nav;
-                            }
-                            else
-                            {
-                                overrideCost = 3;
-                            }
-
-                        }
-                        break;
-                }
+                int overrideCost;
+                if (!IsTraversable(neighbour, nav, out overrideCost))
+                    continue;
 
                 float calcCost = costSoFar[coordinate] + neighbour.Cost + overrideCost;
 
@@ -223,6 +122,87 @@ public static class PathFinder_AStar
         path = new List<Vector3Int>();
         numberOfCells = cameFrom;
         return PathProcessor.TryGetPath(cameFrom, startCoordinate, goalCoordinate, ref path);
+    }
+
+    private static bool IsTraversable(CellData cell,PathFinderTest.NaviType nav, out int overrideCost)
+    {
+        overrideCost = 0;
+
+        if (cell.Cost < 0)
+            return false;
+
+        switch (nav)
+        {
+            case PathFinderTest.NaviType.Elf:
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                    return false;
+                break;
+
+            case PathFinderTest.NaviType.Golem:
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Mountain)
+                    overrideCost = -(int)nav;
+                else if (cell.Cost == (int)TerrainPicker.typesTerrain.Swamp ||
+                         cell.Cost == (int)TerrainPicker.typesTerrain.Ocean ||
+                         cell.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                    overrideCost = (int)nav + 1;
+                break;
+
+            case PathFinderTest.NaviType.SandGoblin:
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                    return false;
+
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Desert ||
+                    cell.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                    overrideCost = -(int)nav;
+                break;
+
+            case PathFinderTest.NaviType.Viking:
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Lava ||
+                    cell.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                    return false;
+
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
+                    overrideCost = -(int)nav;
+                else if (cell.Cost == (int)TerrainPicker.typesTerrain.Desert ||
+                         cell.Cost == (int)TerrainPicker.typesTerrain.Swamp)
+                    overrideCost = (int)nav + 1;
+                break;
+
+            case PathFinderTest.NaviType.Ogre:
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                    return false;
+
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Swamp)
+                    overrideCost = -(int)nav;
+                else if (cell.Cost == (int)TerrainPicker.typesTerrain.SnowPlains ||
+                         cell.Cost == (int)TerrainPicker.typesTerrain.Mountain)
+                    overrideCost = (int)nav + 1;
+                break;
+
+            case PathFinderTest.NaviType.LadyOfTheLake:
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                    return false;
+
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                    overrideCost = -(int)nav;
+                else if (cell.Cost == (int)TerrainPicker.typesTerrain.Swamp)
+                    overrideCost = -(int)nav + 1;
+                else if (cell.Cost == (int)TerrainPicker.typesTerrain.SnowPlains)
+                    overrideCost = (int)nav;
+                break;
+
+            case PathFinderTest.NaviType.Demon:
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Ocean)
+                    return false;
+
+                if (cell.Cost == (int)TerrainPicker.typesTerrain.Lava)
+                    overrideCost = -(int)nav;
+                else
+                    overrideCost = 3;
+                break;
+        }
+
+        return true;
     }
 
     private static float DiagonalCheck(Vector3Int currentCoordinate, Vector3Int endCoordinate, float prev_Cost)
